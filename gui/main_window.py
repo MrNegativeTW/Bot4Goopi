@@ -1,6 +1,6 @@
 import tkinter as tk
 from tkinter import messagebox, font, StringVar
-from bot.bot import launch_bot, open_sign_in_page, attach
+from bot.bot import launch_bot, open_sign_in_page
 from PIL import Image, ImageTk
 
 class Application(tk.Tk):
@@ -24,8 +24,10 @@ class Application(tk.Tk):
         ws = self.winfo_screenwidth() # width of the screen
         hs = self.winfo_screenheight() # height of the screen
         # calculate x and y coordinates for the Tk root window
-        x = (ws / 2) - (w / 2)
-        y = (hs / 2) - (h / 2) - 160
+        # x = (ws / 2) - (w / 2)
+        # y = (hs / 2) - (h / 2) - 160
+        x = ws - w - 10
+        y = 80
         # set the dimensions of the screen 
         # and where it is placed
         self.geometry('%dx%d+%d+%d' % (w, h, x, y))
@@ -51,7 +53,6 @@ class Application(tk.Tk):
         font_title = font.Font(family="Helvetica", size=12, weight="bold")
         font_entry =  font.Font(family="Helvetica", size=12)
 
-        # Start Button
         self.start_button = tk.Button(self, text="開啟瀏覽器", width=12, command=self.open_sign_in_page)
         self.start_button.grid(row=0, column=0)
         self.start_button = tk.Button(self, text="執行", width=12, command=self.start_bot_action)
@@ -64,37 +65,44 @@ class Application(tk.Tk):
         self.button_clear_link = tk.Button(self, text=" 清除 ", command=self.clear_link_entry)
         self.button_clear_link.grid(row=1, column=3, padx=4)
 
-        tk.Label(self, text="尺寸", font=font_title).grid(row=2, column=0)
-        options = ["1號", "2號", "3號", "4號", "S", "M", "L", "XL"]
-        self.prod_size_clicked = StringVar()
-        self.prod_size_clicked.set(options[0])
-        self.prod_size = tk.OptionMenu(self , self.prod_size_clicked , *options)
-        self.prod_size.grid(row=2, column=1)
+        tk.Label(self, text="顏色", font=font_title).grid(row=2, column=0)
+        options_c = ["NA", "1", "2", "3", "4", "5", "6"]
+        self.prod_color_clicked = StringVar()
+        self.prod_color_clicked.set(options_c[0])
+        self.prod_color = tk.OptionMenu(self , self.prod_color_clicked , *options_c)
+        self.prod_color.grid(row=2, column=1)
 
-        tk.Label(self, text="數量", font=font_title).grid(row=3, column=0)
+        tk.Label(self, text="尺寸", font=font_title).grid(row=3, column=0)
+        options_s = ["NA", "1號", "2號", "3號", "4號", "S", "M", "L", "XL"]
+        self.prod_size_clicked = StringVar()
+        self.prod_size_clicked.set(options_s[0])
+        self.prod_size = tk.OptionMenu(self , self.prod_size_clicked , *options_s)
+        self.prod_size.grid(row=3, column=1)
+
+        tk.Label(self, text="數量", font=font_title).grid(row=4, column=0)
         self.prod_qty = tk.Entry(self, font=font_entry, width=6)
         self.prod_qty.insert(tk.END, "1")
-        self.prod_qty.grid(row=3, column=1)
+        self.prod_qty.grid(row=4, column=1)
 
-        tk.Label(self, text="姓名", font=font_title).grid(row=4, column=0)
+        tk.Label(self, text="姓名", font=font_title).grid(row=5, column=0)
         self.entry_name = tk.Entry(self, font=font_entry)
         self.entry_name.insert(tk.END, "王大明")
-        self.entry_name.grid(row=4, column=1)
+        self.entry_name.grid(row=5, column=1)
 
-        tk.Label(self, text="Email", font=font_title).grid(row=5, column=0)
+        tk.Label(self, text="Email", font=font_title).grid(row=6, column=0)
         self.entry_email = tk.Entry(self, font=font_entry)
         self.entry_email.insert(tk.END, "example@example.com")
-        self.entry_email.grid(row=5, column=1)
+        self.entry_email.grid(row=6, column=1)
 
-        tk.Label(self, text="電話", font=font_title).grid(row=6, column=0)
+        tk.Label(self, text="電話", font=font_title).grid(row=7, column=0)
         self.entry_phone = tk.Entry(self, font=font_entry)
         self.entry_phone.insert(tk.END, "0800092000")
-        self.entry_phone.grid(row=6, column=1)
+        self.entry_phone.grid(row=7, column=1)
 
-        tk.Label(self, text="Line ID", font=font_title).grid(row=7, column=0)
+        tk.Label(self, text="Line ID", font=font_title).grid(row=8, column=0)
         self.entry_line_id = tk.Entry(self, font=font_entry)
         self.entry_line_id.insert(tk.END, "asdasdasd")
-        self.entry_line_id.grid(row=7, column=1)
+        self.entry_line_id.grid(row=8, column=1)
 
     def clear_link_entry(self):
         self.entry_link.delete(0, tk.END)
@@ -129,8 +137,12 @@ class Application(tk.Tk):
         self.cc_name.insert(tk.END, "王大明")
         self.cc_name.grid(row=23, column=1)
 
+    def open_sign_in_page(self):
+        open_sign_in_page()
+
     def start_bot_action(self):
         customer_info = {
+            'prod_color': self.prod_color_clicked.get(),
             'prod_size': self.prod_size_clicked.get(),
             'prod_qty': self.prod_qty.get(),
             'name': self.entry_name.get(),
@@ -153,5 +165,4 @@ class Application(tk.Tk):
         launch_bot(product_link, customer_info)
         messagebox.showinfo("Success", "Bot started successfully!")
 
-    def open_sign_in_page(self):
-        open_sign_in_page()
+    
