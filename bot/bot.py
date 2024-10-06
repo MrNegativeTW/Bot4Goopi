@@ -29,29 +29,66 @@ def launch_bot(shopline_product_link, customer_info):
 
     p_product_fill(driver, customer_info)
 
-    p_cart_fill(driver)
+    # p_cart_fill(driver)
 
-    # Page: Checkout, fill payment and recipient info, etc.
-    p_checkout_fill_customer_info_form(driver, customer_info)
-    p_checkout_fill_recipient_form(driver, customer_info)
+    # # Page: Checkout, fill payment and recipient info, etc.
+    # p_checkout_fill_customer_info_form(driver, customer_info)
+    # p_checkout_fill_recipient_form(driver, customer_info)
 
 def p_product_fill(driver, customer_info):
     """
     Page: Products
     """
-    # TODO("顏色/Size/QTY，每樣產品不同，會影響DIV")
-    xpaht_size = "//*[@id=\"Content\"]/div/div[2]/div/div[2]/div/div[2]/div/div/div[2]/div[1]/div[2]/select"
+    # xpaht_size = "//*[@id=\"Content\"]/div/div[2]/div/div[2]/div/div[2]/div/div/div[2]/div[1]/div[2]/select"
     # xpaht_size = "//*[@id=\"Content\"]/div/div[2]/div/div[2]/div/div[2]/div/div/div[2]/div[2]/div[2]/select"
-    xpath_qty = "//*[@id=\"Content\"]/div/div[2]/div/div[2]/div/div[2]/div/div/div[2]/div[2]/div[2]/div/input"
+    # xpath_qty = "//*[@id=\"Content\"]/div/div[2]/div/div[2]/div/div[2]/div/div/div[2]/div[2]/div[2]/div/input"
     # xpath_qty = "//*[@id=\"Content\"]/div/div[2]/div/div[2]/div/div[2]/div/div/div[2]/div[3]/div[2]/div/input"
     
-    prod_size_field = Select(driver.find_element(by=By.XPATH, value=xpaht_size))
-    prod_size_field.select_by_visible_text(customer_info['prod_size'])
+    xpath_variation_detail_prefix = "//*[@id=\"Content\"]/div/div[2]/div/div[2]/div/div[2]/div/div/div[2]/div["
 
-    prod_qty_field = driver.find_element(by=By.XPATH, value=xpath_qty)
-    prod_qty_field.clear()
-    prod_qty_field.send_keys(customer_info['prod_qty'])
-    
+    xpath_color_suffix_1 = "]/div[2]/variation-selector/div/div["
+    xpath_color_suffix_2 = "]"
+    xpath_size_suffix = "]/div[2]/select"
+    xpath_qty_suffix = "]/div[2]/div/input"
+
+    div_index = 1 # Initialize index for dynamic divs
+
+    # [START] Color
+    color_selected = customer_info['prod_color']
+    if color_selected != "NA":
+        xpath_color = xpath_variation_detail_prefix + str(div_index) + \
+            xpath_color_suffix_1 + color_selected + xpath_color_suffix_2
+        try:
+            driver.find_element(By.XPATH, xpath_color).click()
+            div_index += 1
+        except Exception as e:
+            print(f"Error selecting color: {e}")
+    # [END] Color
+
+    # [START] Size
+    size_selected = customer_info['prod_size']
+    if size_selected != "NA":
+        xpath_size = xpath_variation_detail_prefix + str(div_index) + xpath_size_suffix
+        try:
+            prod_size_field = Select(driver.find_element(by=By.XPATH, value=xpath_size))
+            prod_size_field.select_by_visible_text(size_selected)
+            div_index += 1
+        except Exception as e:
+            print(f"Error selecting size: {e}")
+    # [END] Size
+
+    # [START] Qty
+    quantity = customer_info['prod_qty']
+    if int(quantity) > 0:
+        xpath_qty = xpath_variation_detail_prefix + str(div_index) + xpath_qty_suffix
+        try:
+            prod_qty_field = driver.find_element(by=By.XPATH, value=xpath_qty)
+            prod_qty_field.clear()
+            prod_qty_field.send_keys(quantity)
+        except Exception as e:
+            print(f"Error setting quantity: {e}")
+    # [END] Size
+
     xpath_buyNow = "//*[@id=\"#btn-variable-buy-now\"]"
     driver.find_element(By.XPATH, xpath_buyNow).click()
 
