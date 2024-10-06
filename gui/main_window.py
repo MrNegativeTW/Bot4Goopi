@@ -163,6 +163,6 @@ class Application(tk.Tk):
         # You can pass the card number to your bot function
         # config = load_config()
         launch_bot(product_link, customer_info)
-        messagebox.showinfo("Success", "Bot started successfully!")
+        # messagebox.showinfo("Success", "Bot started successfully!")
 
     
