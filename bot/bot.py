@@ -35,9 +35,8 @@ def launch_bot(shopline_product_link, customer_info):
     # # Page: Checkout, fill payment and recipient info, etc.
     p_checkout_fill_customer_info_form(driver, customer_info)
     p_checkout_fill_recipient_form(driver, customer_info)
-    p_checkout_fill_payment_form(driver, customer_info)
-    p_checkout_fill_recipient_form_2(driver, customer_info)
-    p_checkout_fill_agree_box(driver)
+    # p_checkout_fill_payment_form(driver, customer_info)
+    # p_checkout_fill_agree_box(driver)
 
 
 def p_product_fill(driver, customer_info):
@@ -113,6 +112,7 @@ def p_cart_fill(driver):
     )
     go_checkout_button.click()
 
+
 def p_checkout_fill_customer_info_form(driver, customer_info):
     """
     Page: Checkout
@@ -168,19 +168,21 @@ def p_checkout_fill_recipient_form(driver, customer_info):
         recipient_name_field.clear()
         recipient_name_field.send_keys(customer_info['name'])
     except Exception as e:
-        print(f"Error filling LINE ID: {e}")
+        print(f"Error filling recipient name: {e}")
 
     try:
         recipient_phone_field = driver.find_element(by=By.XPATH, value=xpath_recipient_phone)
         recipient_phone_field.clear()
         recipient_phone_field.send_keys(customer_info['phone'])
     except Exception as e:
-        print(f"Error filling LINE ID: {e}")
+        print(f"Error filling recipient phone: {e}")
 
     try:
         driver.find_element(by=By.XPATH, value=xpath_select_seven).click()
     except Exception as e:
-        print(f"Error filling LINE ID: {e}")
+        print(f"Error clicking select seven button: {e}")
+
+    p_checkout_fill_recipient_form_2(driver, customer_info)
 
 
 def p_checkout_fill_recipient_form_2(driver, customer_info):
@@ -189,6 +191,60 @@ def p_checkout_fill_recipient_form_2(driver, customer_info):
 
     送貨資料: 7-11 門市
     """
+    xpath_by_id = "//*[@id=\"byID\"]" # Tabber 門市店號
+    xpath_id_field = "//*[@id=\"storeIDKey\"]"
+    xpath_id_search = "//*[@id=\"send\"]"
+    xpath_id_result = "//*[@id=\"ol_stores\"]/li[1]"
+    xpath_seven_data = "//*[@id=\"sevenDataBtn\"]" # 門市確認
+    xpath_accept_btn = "//*[@id=\"AcceptBtn\"]" # 同意自助取件
+    xpath_final_confirm = "//*[@id=\"submit_butn\"]" # 取貨地點確認
+
+    try:
+        by_id_tabber = WebDriverWait(driver, 30).until(
+            EC.presence_of_element_located((By.XPATH, xpath_by_id))
+        )
+        by_id_tabber.click()
+    except Exception as e:
+        print(f"選擇門市店號按鈕時發生錯誤: {e}")
+
+    try:
+        seven_id_field = WebDriverWait(driver, 30).until(
+            EC.presence_of_element_located((By.XPATH, xpath_id_field))
+        )
+        seven_id_field.clear()
+        seven_id_field.send_keys(customer_info['seven_id'])
+    except Exception as e:
+        print(f"填寫門市店號時發生錯誤: {e}")
+
+    try:
+        id_search_button = WebDriverWait(driver, 30).until(
+            EC.presence_of_element_located((By.XPATH, xpath_id_search))
+        )
+        id_search_button.click()
+
+        # Wait for and click on the search result
+        id_search_result = WebDriverWait(driver, 30).until(
+            EC.presence_of_element_located((By.XPATH, xpath_id_result))
+        )
+        id_search_result.click()
+
+        driver.find_element(by=By.XPATH, value=xpath_id_result).click()
+        seven_data_button = WebDriverWait(driver, 30).until(
+            EC.presence_of_element_located((By.XPATH, xpath_seven_data))
+        )
+        seven_data_button.click()
+
+        accept_button = WebDriverWait(driver, 30).until(
+            EC.presence_of_element_located((By.XPATH, xpath_accept_btn))
+        )
+        accept_button.click()
+        
+        final_confirm_button = WebDriverWait(driver, 30).until(
+            EC.presence_of_element_located((By.XPATH, xpath_final_confirm))
+        )
+        final_confirm_button.click()
+    except Exception as e:
+        print(f"搜尋門市店號後發生錯誤: {e}")
     
 
 def p_checkout_fill_payment_form(driver, customer_info):

@@ -36,10 +36,22 @@ class Application(tk.Tk):
 
     def createMenu(self):
         menu = tk.Menu(self)
-        self.config(menu=menu)
-        menu.add_command(label='檔案')
-        menu.add_command(label='載入上次資料')
+
+        menu.add_command(label='載入資料')
         menu.add_command(label='儲存資料')
+        menu.add_command(label='注意事項', command=self.show_info_dialog)
+        menu.add_command(label='關於', command=self.show_about_dialog)
+
+        self.config(menu=menu)
+
+    def show_info_dialog(self):
+        messagebox.showinfo("注意事項", "謝謝你的注意")
+
+    def show_about_dialog(self):
+        messagebox.showinfo("About", "Goopi Bot\n" + \
+                            "Version: v0.0.1\n" + \
+                            "Author: Trevor\n" + \
+                            "Made with: LOVE\n")
 
     def createImages(self):
         banner = Image.open('res/goopi_bot.png') 
@@ -54,9 +66,9 @@ class Application(tk.Tk):
         font_entry =  font.Font(family="Helvetica", size=12)
 
         self.start_button = tk.Button(self, text="開啟瀏覽器", width=12, command=self.open_sign_in_page)
-        self.start_button.grid(row=0, column=0)
+        self.start_button.grid(row=0, column=0, pady=8)
         self.start_button = tk.Button(self, text="執行", width=12, command=self.start_bot_action)
-        self.start_button.grid(row=0, column=1)
+        self.start_button.grid(row=0, column=1, pady=8)
 
         tk.Label(self, text="商品網址", font=font_title).grid(row=1, column=0)
         self.entry_link = tk.Entry(self, font=font_entry)
@@ -111,7 +123,10 @@ class Application(tk.Tk):
         font_title = font.Font(family="Helvetica", size=12, weight="bold")
         font_entry =  font.Font(family="Helvetica", size=12)
 
-        tk.Label(self, text="取貨門市 TODO", font=font_title).grid(row=10, column=0)
+        tk.Label(self, text="門市店號", font=font_title).grid(row=15, column=0)
+        self.seven_id = tk.Entry(self, font=font_entry)
+        self.seven_id.insert(tk.END, "254063")
+        self.seven_id.grid(row=15, column=1)
 
     def createSectionCreditCard(self):
         font_title = font.Font(family="Helvetica", size=12, weight="bold")
@@ -149,6 +164,7 @@ class Application(tk.Tk):
             'email': self.entry_email.get(),
             'phone': self.entry_phone.get(),
             'line_id': self.entry_line_id.get(),
+            'seven_id': self.seven_id.get(),
             'cc_number': self.cc_number.get(),
             'cc_date': self.cc_date.get(),
             'cc_cvc': self.cc_cvc.get(),
