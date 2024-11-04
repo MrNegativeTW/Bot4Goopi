@@ -3,6 +3,8 @@ import tkinter.ttk as ttk
 from tkinter import messagebox, font, StringVar
 from bot.bot import launch_bot, open_sign_in_page
 from PIL import Image, ImageTk
+import json
+import threading
 
 from data import constants as Constants
 
@@ -10,7 +12,7 @@ class Application(tk.Tk):
     def __init__(self):
         super().__init__()
 
-        self.title("Goopi Bot - v0.0.1")
+        self.title(f"GOOPi 機器人 ({Constants.CONST_APP_VERSION})")
         self.setupWindow()
 
         # self.createMenu()
@@ -21,6 +23,7 @@ class Application(tk.Tk):
         self.create_section_about()
 
         self.create_footer_actions()
+        self.create_bottom_status_bar()
 
     def setupWindow(self):
         w = 400 # width for the Tk root
@@ -48,8 +51,8 @@ class Application(tk.Tk):
         self.config(menu=menu)
 
     def create_notebook(self):
-        self.notebook = ttk.Notebook(self, width=300)
-        self.notebook.grid(row=0, column=0)
+        self.notebook = ttk.Notebook(self, width=380)
+        self.notebook.pack(padx=8, pady=8)
 
     def add_notebook(self, frame, title):
         self.notebook.add(frame, text=title)
@@ -164,15 +167,21 @@ class Application(tk.Tk):
         self.add_notebook(frame, "關於")
 
     def create_footer_actions(self):
-        self.start_button = tk.Button(self, text="開啟瀏覽器", width=12, command=self.open_sign_in_page)
-        self.start_button.grid(row=2, column=0, pady=8)
-        self.start_button = tk.Button(self, text="執行", width=12, command=self.start_bot_action)
-        self.start_button.grid(row=2, column=1, pady=8)
+        self.start_button = tk.Button(self, text="開啟瀏覽器", width=12, command=self.btn_act_open_browser)
+        self.start_button.pack()
+        self.start_button = tk.Button(self, text="執行", width=12, command=self.btn_act_run)
+        self.start_button.pack()
+    
+    def create_bottom_status_bar(self):
+        self.bottom_status_text =  tk.StringVar()
+        self.bottom_status_text.set("IDLE")
+        statusbar = tk.Label(self, textvariable=self.bottom_status_text, relief=tk.SUNKEN, anchor='w')
+        statusbar.pack(side=tk.BOTTOM, fill=tk.X)
 
-    def open_sign_in_page(self):
-        open_sign_in_page()
+    def btn_act_open_browser(self):
+        threading.Thread(target=open_sign_in_page).start()
 
-    def start_bot_action(self):
+    def btn_act_run(self):
         customer_info = {
             'prod_color': self.prod_color_clicked.get(),
             'prod_size': self.prod_size_clicked.get(),
@@ -190,12 +199,16 @@ class Application(tk.Tk):
         product_link = self.entry_link.get()
 
         if not all(customer_info.values()) or not product_link:
-                messagebox.showerror("等等!", "請填寫所有資料!")
+                messagebox.showwarning("警告", "請填寫所有資料!")
                 return
-        
-        # You can pass the card number to your bot function
-        # config = load_config()
-        launch_bot(product_link, customer_info)
-        # messagebox.showinfo("Success", "Bot started successfully!")
 
+        try:
+            with open("customer_info.json", "w", encoding="utf-8") as f:
+                json.dump({"product_link": product_link, "customer_info": customer_info}, f, indent=4, ensure_ascii=False)
+
+            # Launch bot in a separate thread
+            threading.Thread(target=launch_bot, args=(product_link, customer_info)).start()
+        except Exception as e:
+            messagebox.showerror("錯誤", f"儲存設定時發生錯誤。\n\n{e}")
+            return
     
