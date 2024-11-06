@@ -7,6 +7,8 @@ from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 import time
 
+from utils import log as LogUtils
+
 chrome_options = Options()
 chrome_options.add_experimental_option("detach", True)
 chrome_options.add_argument("window-size=1400,1000")
@@ -264,10 +266,38 @@ def p_checkout_fill_payment_form(driver, customer_info):
     """
     Page: Checkout
 
-    付款資料
+    填寫付款資料
+    
+    iframe 依序為卡號、持卡人姓名、有效期、安全碼
     """
-    print("TODO")
 
+    try:
+        form = driver.find_element(By.ID, "checkout-shopline-payment-v2-form")
+        iframes = form.find_elements(By.TAG_NAME, "iframe")
+        print("[INFO] 信用卡表單 len(iframes) = ", len(iframes))
+    except Exception as e:
+        print(f"[WRAN] [付款資料] 尋找信用卡表單失敗, len(iframes) = ", len(iframes))
+
+    for index, iframe in enumerate(iframes):
+        try:
+            frame_name = iframe.get_attribute('name')
+            frame_id = iframe.get_attribute('id')
+            LogUtils.log_info("Switching to iframe\n  > name: ", frame_name, "\n  > id: ", frame_id)
+            driver.switch_to.frame(frame_id)
+
+            input_element = driver.find_element(By.TAG_NAME, "input")
+            if index == 0:
+                input_element.send_keys(customer_info['cc_number'])
+            elif index == 1:
+                input_element.send_keys(customer_info['cc_name'])
+            elif index == 2:
+                input_element.send_keys(customer_info['cc_date'])
+            elif index == 3:  
+                input_element.send_keys(customer_info['cc_cvc'])
+        except Exception as e:
+            LogUtils.log_info(f"[WRAN] [付款資料] 填寫時發生錯誤 (index {index}), {e}")
+        finally:
+            driver.switch_to.default_content()
 
 def p_checkout_fill_agree_box(driver):
     """
