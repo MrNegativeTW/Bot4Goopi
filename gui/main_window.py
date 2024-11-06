@@ -1,7 +1,7 @@
 import tkinter as tk
 import tkinter.ttk as ttk
 from tkinter import messagebox, font, StringVar
-from bot.bot import launch_bot, open_sign_in_page
+from bot.bot import launch_bot, open_browser
 from PIL import Image, ImageTk
 import json
 import threading
@@ -59,8 +59,8 @@ class Application(tk.Tk):
 
     def create_section_pref(self):
         frame1 = tk.Frame()
-        font_title = font.Font(family="Helvetica", size=10)
-        font_entry =  font.Font(family="Helvetica", size=10)
+        font_title = font.Font(family="微軟正黑體", size=10)
+        font_entry =  font.Font(family="微軟正黑體", size=10)
 
         tk.Label(frame1, text="商品網址", font=font_title).grid(row=1, column=0)
         self.entry_link = tk.Entry(frame1, font=font_entry, width=30)
@@ -86,11 +86,6 @@ class Application(tk.Tk):
         self.prod_qty.insert(tk.END, "1")
         self.prod_qty.grid(row=4, column=1)
 
-        box = ttk.Combobox(frame1, width=15, values=Constants.CONST_SIZE_LIST)
-        box.grid(row=5, column=1)
-        box.current(0)
-        # 改用這個box.current() box.get()
-
         frame1.button_clear_link = tk.Button(frame1, text="清除全部", command=self.clear_link_entry)
         frame1.button_clear_link.grid(row=9, column=0, padx=4)
 
@@ -101,9 +96,9 @@ class Application(tk.Tk):
 
     def create_section_autofill(self):
         frame = tk.Frame()
-        font_area_start = font.Font(family="Helvetica", size=10, weight="bold")
-        font_title = font.Font(family="Helvetica", size=10)
-        font_entry =  font.Font(family="Helvetica", size=10)
+        font_area_start = font.Font(family="微軟正黑體", size=10, weight="bold")
+        font_title = font.Font(family="微軟正黑體", size=10)
+        font_entry =  font.Font(family="微軟正黑體", size=10)
 
         tk.Label(frame, text="基本資料", font=font_area_start).grid(row=1, column=0)
 
@@ -179,7 +174,11 @@ class Application(tk.Tk):
         statusbar.pack(side=tk.BOTTOM, fill=tk.X)
 
     def btn_act_open_browser(self):
-        threading.Thread(target=open_sign_in_page).start()
+        product_link = self.entry_link.get()
+        if not product_link:
+            messagebox.showwarning("警告", "請填寫商品網址")
+            return
+        threading.Thread(target=open_browser, args=(product_link,)).start()
 
     def btn_act_run(self):
         customer_info = {

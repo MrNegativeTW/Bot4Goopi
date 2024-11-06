@@ -2,6 +2,7 @@ from selenium import webdriver
 from selenium.webdriver.support.ui import Select
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
+from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 import time
@@ -10,7 +11,7 @@ chrome_options = Options()
 chrome_options.add_experimental_option("detach", True)
 chrome_options.add_argument("window-size=1400,1000")
 
-def open_sign_in_page():
+def open_browser(shopline_product_link):
     opts = Options()
     opts.add_argument("--remote-debugging-port=9222")
     opts.add_experimental_option("detach", True)
@@ -18,7 +19,7 @@ def open_sign_in_page():
     opts.add_argument("window-size=1400,1000")
 
     driver = webdriver.Chrome(options = opts)
-    driver.get("https://www.goopi.co/users/sign_in")
+    driver.get(shopline_product_link)
 
 
 def launch_bot(shopline_product_link, customer_info):
@@ -28,15 +29,15 @@ def launch_bot(shopline_product_link, customer_info):
     driver = webdriver.Chrome(options=opts)
     driver.get(shopline_product_link)
 
-    p_product_fill(driver, customer_info)
+    # p_product_fill(driver, customer_info)
 
-    p_cart_fill(driver)
+    # p_cart_fill(driver)
 
     # # Page: Checkout, fill payment and recipient info, etc.
     p_checkout_fill_customer_info_form(driver, customer_info)
     p_checkout_fill_recipient_form(driver, customer_info)
-    # p_checkout_fill_payment_form(driver, customer_info)
-    # p_checkout_fill_agree_box(driver)
+    p_checkout_fill_payment_form(driver, customer_info)
+    p_checkout_fill_agree_box(driver)
 
 
 def p_product_fill(driver, customer_info):
@@ -123,34 +124,42 @@ def p_checkout_fill_customer_info_form(driver, customer_info):
     xpath_customer_mail = "//*[@id=\"order-customer-email\"]"
     xpath_customer_phone = "//*[@id=\"order-customer-phone\"]"
     xpath_line_id = "//*[@id=\"user-field-598198f2d4e395db79000a21\"]"
+    name_customer_name = "order[customer_name]"
+    name_customer_mail = "order[customer_email]"
+    name_customer_phone = "order[customer_phone]"
+    name_line_id = "saveFields[customer_info][598198f2d4e395db79000a21]"
     
     try:
-        customer_name_field = driver.find_element(by=By.XPATH, value=xpath_customer_name)
+        # customer_name_field = driver.find_element(by=By.XPATH, value=xpath_customer_name)
+        customer_name_field = driver.find_element(by=By.NAME, value=name_customer_name)
         customer_name_field.clear()
         customer_name_field.send_keys(customer_info['name'])
     except Exception as e:
-        print(f"Error filling name: {e}")
+        print(f"[WRAN] [顧客資料] 填寫顧客名稱時發生錯誤: {e}")
     
     try:
-        customer_mail_field = driver.find_element(by=By.XPATH, value=xpath_customer_mail)
+        # customer_mail_field = driver.find_element(by=By.XPATH, value=xpath_customer_mail)
+        customer_mail_field = driver.find_element(by=By.NAME, value=name_customer_mail)
         customer_mail_field.clear()
         customer_mail_field.send_keys(customer_info['email'])
     except Exception as e:
-        print(f"Error filling email: {e}")
+        print(f"[WRAN] [顧客資料] 填寫 email 時發生錯誤: {e}")
 
     try:
-        customer_phone_field = driver.find_element(by=By.XPATH, value=xpath_customer_phone)
+        # customer_phone_field = driver.find_element(by=By.XPATH, value=xpath_customer_phone)
+        customer_phone_field = driver.find_element(by=By.NAME, value=name_customer_phone)
         customer_phone_field.clear()
         customer_phone_field.send_keys(customer_info['phone'])
     except Exception as e:
-        print(f"Error filling phone: {e}")
+        print(f"[WRAN] [顧客資料] 填寫電話時發生錯誤: {e}")
 
     try:
-        line_id_field = driver.find_element(by=By.XPATH, value=xpath_line_id)
+        # line_id_field = driver.find_element(by=By.XPATH, value=xpath_line_id)
+        line_id_field = driver.find_element(by=By.NAME, value=name_line_id)
         line_id_field.clear()
         line_id_field.send_keys(customer_info['line_id'])
     except Exception as e:
-        print(f"Error filling LINE ID: {e}")
+        print(f"[WRAN] [顧客資料] 填寫 LINE ID 時發生錯誤: {e}")
 
 
 def p_checkout_fill_recipient_form(driver, customer_info):
@@ -161,28 +170,26 @@ def p_checkout_fill_recipient_form(driver, customer_info):
     """
     xpath_recipient_name = "//*[@id=\"recipient-name\"]"
     xpath_recipient_phone = "//*[@id=\"recipient-phone\"]"
-    xpath_select_seven = "//*[@id=\"seven-eleven-address\"]/div/div"
+    name_recipient_name = "order[delivery_data][recipient_name]"
+    name_recipient_phone = "order[delivery_data][recipient_phone]"
 
     try:
-        recipient_name_field = driver.find_element(by=By.XPATH, value=xpath_recipient_name)
+        # recipient_name_field = driver.find_element(by=By.XPATH, value=xpath_recipient_name)
+        recipient_name_field = driver.find_element(by=By.NAME, value=name_recipient_name)
         recipient_name_field.clear()
         recipient_name_field.send_keys(customer_info['name'])
     except Exception as e:
-        print(f"Error filling recipient name: {e}")
+        print(f"[WRAN] [送貨資料] 填寫名稱時發生錯誤: {e}")
 
     try:
-        recipient_phone_field = driver.find_element(by=By.XPATH, value=xpath_recipient_phone)
+        # recipient_phone_field = driver.find_element(by=By.XPATH, value=xpath_recipient_phone)
+        recipient_phone_field = driver.find_element(by=By.NAME, value=name_recipient_phone)
         recipient_phone_field.clear()
         recipient_phone_field.send_keys(customer_info['phone'])
     except Exception as e:
-        print(f"Error filling recipient phone: {e}")
+        print(f"[WRAN] [送貨資料] 填寫電話號碼時發生錯誤: {e}")
 
-    try:
-        driver.find_element(by=By.XPATH, value=xpath_select_seven).click()
-    except Exception as e:
-        print(f"Error clicking select seven button: {e}")
-
-    p_checkout_fill_recipient_form_2(driver, customer_info)
+    # p_checkout_fill_recipient_form_2(driver, customer_info)
 
 
 def p_checkout_fill_recipient_form_2(driver, customer_info):
@@ -191,6 +198,7 @@ def p_checkout_fill_recipient_form_2(driver, customer_info):
 
     送貨資料: 7-11 門市
     """
+    xpath_select_seven = "//*[@id=\"seven-eleven-address\"]/div/div" # 搜尋門市按鈕
     xpath_by_id = "//*[@id=\"byID\"]" # Tabber 門市店號
     xpath_id_field = "//*[@id=\"storeIDKey\"]"
     xpath_id_search = "//*[@id=\"send\"]"
@@ -198,6 +206,11 @@ def p_checkout_fill_recipient_form_2(driver, customer_info):
     xpath_seven_data = "//*[@id=\"sevenDataBtn\"]" # 門市確認
     xpath_accept_btn = "//*[@id=\"AcceptBtn\"]" # 同意自助取件
     xpath_final_confirm = "//*[@id=\"submit_butn\"]" # 取貨地點確認
+
+    try:
+        driver.find_element(by=By.XPATH, value=xpath_select_seven).click()
+    except Exception as e:
+        print(f"Error clicking select seven button: {e}")
 
     try:
         by_id_tabber = WebDriverWait(driver, 30).until(
@@ -262,8 +275,18 @@ def p_checkout_fill_agree_box(driver):
 
     我同意網站服務條款及隱私權政策
     """
-    xpath_agree_box = "//*[@id=\"checkout-container\"]/div/div[5]/div[1]/form/div/label/input"
+
     try:
-        driver.find_element(by=By.XPATH, value=xpath_agree_box).click()
+        js = "document.querySelector('input[name=\"policy\"]').click();"
+        driver.execute_script(js)
     except Exception as e:
-        print(f"Error checking agress to terms and conditions: {e}")
+        print(f"[WRAN] 勾選同意條款時發生錯誤: {e}")
+
+    xpath_agree_box = "//*[@id=\"checkout-container\"]/div/div[5]/div[1]/form/div/label/input"
+
+    try:
+        box = driver.find_element(by=By.XPATH, value=xpath_agree_box)
+        if box.is_selected() == False:
+            print("TODO(顯示未勾選訊息)")
+    except Exception as e:
+        print(f"[WRAN] oops")
