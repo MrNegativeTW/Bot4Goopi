@@ -7,7 +7,7 @@ from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 import time
 
-from utils import log as LogUtils
+from utils.log import LogUtils
 
 chrome_options = Options()
 chrome_options.add_experimental_option("detach", True)
@@ -18,7 +18,7 @@ def open_browser(shopline_product_link):
     opts.add_argument("--remote-debugging-port=9222")
     opts.add_experimental_option("detach", True)
     opts.add_argument("--user-data-dir=C:/selenium/GoopiChromeProfile")
-    opts.add_argument("window-size=1400,1000")
+    opts.add_argument("window-size=1300,1000")
 
     driver = webdriver.Chrome(options = opts)
     driver.get(shopline_product_link)
@@ -35,9 +35,10 @@ def launch_bot(shopline_product_link, customer_info):
 
     # p_cart_fill(driver)
 
-    # # Page: Checkout, fill payment and recipient info, etc.
-    p_checkout_fill_customer_info_form(driver, customer_info)
+    # Page: Checkout, fill payment and recipient info, etc.
+    # 這邊我們反過來先寫 7-11 地址
     p_checkout_fill_recipient_form(driver, customer_info)
+    p_checkout_fill_customer_info_form(driver, customer_info)
     p_checkout_fill_payment_form(driver, customer_info)
     p_checkout_fill_agree_box(driver)
 
@@ -137,7 +138,7 @@ def p_checkout_fill_customer_info_form(driver, customer_info):
         customer_name_field.clear()
         customer_name_field.send_keys(customer_info['name'])
     except Exception as e:
-        print(f"[WRAN] [顧客資料] 填寫顧客名稱時發生錯誤: {e}")
+        LogUtils.log_warn(f"[顧客資料] 填寫顧客名稱時發生錯誤: {e}")
     
     try:
         # customer_mail_field = driver.find_element(by=By.XPATH, value=xpath_customer_mail)
@@ -145,7 +146,7 @@ def p_checkout_fill_customer_info_form(driver, customer_info):
         customer_mail_field.clear()
         customer_mail_field.send_keys(customer_info['email'])
     except Exception as e:
-        print(f"[WRAN] [顧客資料] 填寫 email 時發生錯誤: {e}")
+        LogUtils.log_warn(f"[顧客資料] 填寫 email 時發生錯誤: {e}")
 
     try:
         # customer_phone_field = driver.find_element(by=By.XPATH, value=xpath_customer_phone)
@@ -153,7 +154,7 @@ def p_checkout_fill_customer_info_form(driver, customer_info):
         customer_phone_field.clear()
         customer_phone_field.send_keys(customer_info['phone'])
     except Exception as e:
-        print(f"[WRAN] [顧客資料] 填寫電話時發生錯誤: {e}")
+        LogUtils.log_warn(f"[顧客資料] 填寫電話時發生錯誤: {e}")
 
     try:
         # line_id_field = driver.find_element(by=By.XPATH, value=xpath_line_id)
@@ -161,7 +162,7 @@ def p_checkout_fill_customer_info_form(driver, customer_info):
         line_id_field.clear()
         line_id_field.send_keys(customer_info['line_id'])
     except Exception as e:
-        print(f"[WRAN] [顧客資料] 填寫 LINE ID 時發生錯誤: {e}")
+        LogUtils.log_warn(f"[顧客資料] 填寫 LINE ID 時發生錯誤: {e}")
 
 
 def p_checkout_fill_recipient_form(driver, customer_info):
@@ -181,7 +182,7 @@ def p_checkout_fill_recipient_form(driver, customer_info):
         recipient_name_field.clear()
         recipient_name_field.send_keys(customer_info['name'])
     except Exception as e:
-        print(f"[WRAN] [送貨資料] 填寫名稱時發生錯誤: {e}")
+        LogUtils.log_warn(f"[送貨資料] 填寫名稱時發生錯誤: {e}")
 
     try:
         # recipient_phone_field = driver.find_element(by=By.XPATH, value=xpath_recipient_phone)
@@ -189,10 +190,9 @@ def p_checkout_fill_recipient_form(driver, customer_info):
         recipient_phone_field.clear()
         recipient_phone_field.send_keys(customer_info['phone'])
     except Exception as e:
-        print(f"[WRAN] [送貨資料] 填寫電話號碼時發生錯誤: {e}")
+        LogUtils.log_warn(f"[送貨資料] 填寫電話號碼時發生錯誤: {e}")
 
-    # p_checkout_fill_recipient_form_2(driver, customer_info)
-
+    p_checkout_fill_recipient_form_2(driver, customer_info)
 
 def p_checkout_fill_recipient_form_2(driver, customer_info):
     """
@@ -200,67 +200,86 @@ def p_checkout_fill_recipient_form_2(driver, customer_info):
 
     送貨資料: 7-11 門市
     """
-    xpath_select_seven = "//*[@id=\"seven-eleven-address\"]/div/div" # 搜尋門市按鈕
-    xpath_by_id = "//*[@id=\"byID\"]" # Tabber 門市店號
-    xpath_id_field = "//*[@id=\"storeIDKey\"]"
-    xpath_id_search = "//*[@id=\"send\"]"
+    id_select_seven = "seven-eleven-address" # 搜尋門市按鈕
+    id_by_id = "byID" # Tabber 門市店號
+    id_store_id_key = "storeIDKey"
     xpath_id_result = "//*[@id=\"ol_stores\"]/li[1]"
-    xpath_seven_data = "//*[@id=\"sevenDataBtn\"]" # 門市確認
+    id_seven_data = "sevenDataBtn" # 門市確認
     xpath_accept_btn = "//*[@id=\"AcceptBtn\"]" # 同意自助取件
     xpath_final_confirm = "//*[@id=\"submit_butn\"]" # 取貨地點確認
 
     try:
-        driver.find_element(by=By.XPATH, value=xpath_select_seven).click()
+        driver.find_element(by=By.ID, value=id_select_seven).click()
     except Exception as e:
-        print(f"Error clicking select seven button: {e}")
+        LogUtils.log_warn(f"[711 門市] 點選 \"選擇門市\"\n{e}")
 
     try:
-        by_id_tabber = WebDriverWait(driver, 30).until(
-            EC.presence_of_element_located((By.XPATH, xpath_by_id))
+        by_id_tabber = WebDriverWait(driver, 10).until(
+            EC.presence_of_element_located((By.ID, id_by_id))
         )
         by_id_tabber.click()
     except Exception as e:
-        print(f"選擇門市店號按鈕時發生錯誤: {e}")
+        LogUtils.log_warn(f"[711 門市] 點選\"門市店號\"時錯誤\n{e}")
 
+    # 7-11 會換 iframe
+
+    # 切換至 iframe 內並送出門市店號
     try:
-        seven_id_field = WebDriverWait(driver, 30).until(
-            EC.presence_of_element_located((By.XPATH, xpath_id_field))
+        WebDriverWait(driver, 10).until(
+            EC.frame_to_be_available_and_switch_to_it((By.ID, "frmMain"))
         )
-        seven_id_field.clear()
-        seven_id_field.send_keys(customer_info['seven_id'])
+        store_id_field = driver.find_element(by=By.ID, value=id_store_id_key)
+        store_id_field.clear()
+        store_id_field.send_keys(customer_info['seven_id'])
     except Exception as e:
-        print(f"填寫門市店號時發生錯誤: {e}")
+        LogUtils.log_warn(f"[711 門市] 填寫\"門市店號\"時錯誤\n{e}")
 
+    # 點選搜尋門市
     try:
-        id_search_button = WebDriverWait(driver, 30).until(
-            EC.presence_of_element_located((By.XPATH, xpath_id_search))
-        )
-        id_search_button.click()
-
+        js = "getStore();"
+        driver.execute_script(js)
+    except Exception as e:
+        LogUtils.log_warn(f"[711 門市] 執行 getStore() 時錯誤\n{e}")
+    
+    # 點選搜尋結果的第一個
+    try:
         # Wait for and click on the search result
-        id_search_result = WebDriverWait(driver, 30).until(
+        id_search_result = WebDriverWait(driver, 10).until(
             EC.presence_of_element_located((By.XPATH, xpath_id_result))
         )
         id_search_result.click()
+    except Exception as e:
+        LogUtils.log_warn(f"[711 門市] 選擇第一個門市時發生錯誤\n{e}")
+    finally:
+        driver.switch_to.default_content()
 
-        driver.find_element(by=By.XPATH, value=xpath_id_result).click()
-        seven_data_button = WebDriverWait(driver, 30).until(
-            EC.presence_of_element_located((By.XPATH, xpath_seven_data))
+    try:
+        seven_data_button = WebDriverWait(driver, 10).until(
+            EC.presence_of_element_located((By.ID, id_seven_data))
         )
         seven_data_button.click()
+    except Exception as e:
+        LogUtils.log_warn(f"[711 門市] 點選\"門市確認\"時錯誤\n{e}")
 
-        accept_button = WebDriverWait(driver, 30).until(
+    try:
+        accept_button = WebDriverWait(driver, 10).until(
             EC.presence_of_element_located((By.XPATH, xpath_accept_btn))
         )
-        accept_button.click()
-        
-        final_confirm_button = WebDriverWait(driver, 30).until(
+        # accept_button.click()
+        js = "sendSeven()"
+        driver.execute_script(js)
+    except Exception as e:
+        LogUtils.log_warn(f"[711 門市] 點選取貨不付款的\"同意\"時錯誤\n{e}")
+
+    try:
+        final_confirm_button = WebDriverWait(driver, 10).until(
             EC.presence_of_element_located((By.XPATH, xpath_final_confirm))
         )
-        final_confirm_button.click()
+        # final_confirm_button.click()
+        js = "SendStore()"
+        driver.execute_script(js)
     except Exception as e:
-        print(f"搜尋門市店號後發生錯誤: {e}")
-    
+        LogUtils.log_warn(f"[711 門市] 點選取貨地點確認\"確認\"時錯誤\n{e}")    
 
 def p_checkout_fill_payment_form(driver, customer_info):
     """
@@ -274,28 +293,35 @@ def p_checkout_fill_payment_form(driver, customer_info):
     try:
         form = driver.find_element(By.ID, "checkout-shopline-payment-v2-form")
         iframes = form.find_elements(By.TAG_NAME, "iframe")
-        print("[INFO] 信用卡表單 len(iframes) = ", len(iframes))
+        LogUtils.log_info(f"[付款資料] 信用卡表單檢測到 {len(iframes)} 個 iframe")
     except Exception as e:
-        print(f"[WRAN] [付款資料] 尋找信用卡表單失敗, len(iframes) = ", len(iframes))
+        LogUtils.log_warn("[付款資料] 找不到信用卡表單", f"錯誤: {e}")
+
+    # Define the mapping of iframe names to customer_info fields
+    field_mapping = {
+        "number": "cc_number",
+        "firstName": "cc_name",
+        "expDate": "cc_date",
+        "cvc": "cc_cvc"
+    }
 
     for index, iframe in enumerate(iframes):
         try:
-            frame_name = iframe.get_attribute('name')
             frame_id = iframe.get_attribute('id')
-            LogUtils.log_info("Switching to iframe\n  > name: ", frame_name, "\n  > id: ", frame_id)
+            LogUtils.log_info(f"切換到 iframe - index: {index}, id: {frame_id}")
             driver.switch_to.frame(frame_id)
 
             input_element = driver.find_element(By.TAG_NAME, "input")
-            if index == 0:
-                input_element.send_keys(customer_info['cc_number'])
-            elif index == 1:
-                input_element.send_keys(customer_info['cc_name'])
-            elif index == 2:
-                input_element.send_keys(customer_info['cc_date'])
-            elif index == 3:  
-                input_element.send_keys(customer_info['cc_cvc'])
+            matching_key = next((key for key in field_mapping if key in frame_id), None)
+            if matching_key:
+                input_element = driver.find_element(By.TAG_NAME, "input")
+                input_value = customer_info.get(field_mapping[matching_key], "")
+                input_element.send_keys(input_value)
+                LogUtils.log_info(f"[付款資料] 輸入 {field_mapping[matching_key]}...")
+            else:
+                LogUtils.log_warn(f"[付款資料] 未知的 iframe id: {frame_id}")
         except Exception as e:
-            LogUtils.log_info(f"[WRAN] [付款資料] 填寫時發生錯誤 (index {index}), {e}")
+            LogUtils.log_warn(f"[付款資料] 填寫時發生錯誤 (index {index}, {frame_id})\n{e}")
         finally:
             driver.switch_to.default_content()
 
@@ -310,13 +336,13 @@ def p_checkout_fill_agree_box(driver):
         js = "document.querySelector('input[name=\"policy\"]').click();"
         driver.execute_script(js)
     except Exception as e:
-        print(f"[WRAN] 勾選同意條款時發生錯誤: {e}")
+        LogUtils.log_warn(f"勾選同意條款時發生錯誤: {e}")
 
     xpath_agree_box = "//*[@id=\"checkout-container\"]/div/div[5]/div[1]/form/div/label/input"
 
     try:
         box = driver.find_element(by=By.XPATH, value=xpath_agree_box)
         if box.is_selected() == False:
-            print("TODO(顯示未勾選訊息)")
+            LogUtils.log_info("TODO(顯示未勾選訊息)")
     except Exception as e:
-        print(f"[WRAN] oops")
+        LogUtils.log_warn("oops")
