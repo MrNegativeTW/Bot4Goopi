@@ -8,6 +8,7 @@ from selenium.webdriver.support import expected_conditions as EC
 import time
 
 from utils.log import LogUtils
+from data import constants as Constants
 
 chrome_options = Options()
 chrome_options.add_experimental_option("detach", True)
@@ -24,36 +25,65 @@ def open_browser(shopline_product_link):
     driver.get(shopline_product_link)
 
 
-def launch_bot(shopline_product_link, customer_info):
+def launch_bot_from_product(shopline_product_link, customer_info):
     # Attach to existing browser
     opts = Options()
     opts.debugger_address = "127.0.0.1:9222"
     driver = webdriver.Chrome(options=opts)
-    driver.get(shopline_product_link)
+    if driver.current_url != shopline_product_link:
+        driver.get(shopline_product_link)
 
-    # p_product_fill(driver, customer_info)
+    if p_product_fill(driver, customer_info) == False:
+        return
 
-    # p_cart_fill(driver)
+    # Page: Cart
+    if p_cart_fill(driver) == False:
+        navigate_to_checkout_directly(driver)
 
     # Page: Checkout, fill payment and recipient info, etc.
-    # 這邊我們反過來先寫 7-11 地址
-    p_checkout_fill_recipient_form(driver, customer_info)
+    p_checkout_fill_recipient_form(driver, customer_info) # 這邊我們反過來先寫 7-11 地址
     p_checkout_fill_customer_info_form(driver, customer_info)
     p_checkout_fill_payment_form(driver, customer_info)
     p_checkout_fill_agree_box(driver)
 
 
+def launch_bot_from_cart(customer_info):
+    # Attach to existing browser
+    opts = Options()
+    opts.debugger_address = "127.0.0.1:9222"
+    driver = webdriver.Chrome(options=opts)
+    if driver.current_url != Constants.URL_GOOPI_CART:
+        driver.get(Constants.URL_GOOPI_CART)
+
+    # Page: Cart
+    if p_cart_fill(driver) == False:
+        navigate_to_checkout_directly(driver)
+
+    # Page: Checkout, fill payment and recipient info, etc.
+    p_checkout_fill_recipient_form(driver, customer_info) # 這邊我們反過來先寫 7-11 地址
+    p_checkout_fill_customer_info_form(driver, customer_info)
+    p_checkout_fill_payment_form(driver, customer_info)
+    p_checkout_fill_agree_box(driver)
+
+# [START] 商品頁 ================================================================
+
 def p_product_fill(driver, customer_info):
     """
-    Page: Products
+    TODO: 用 xpath 找太不穩定了，要想辦法 parse 內容
+
+    Page: 產品詳細頁 Products. 
+    
+    Url: www.goopi.co/products/*
 
     Select variations such as color, size, and quantity.
+
+    Return: True if select variants successfully, False otherwise.
     """
     # xpaht_size = "//*[@id=\"Content\"]/div/div[2]/div/div[2]/div/div[2]/div/div/div[2]/div[1]/div[2]/select"
     # xpaht_size = "//*[@id=\"Content\"]/div/div[2]/div/div[2]/div/div[2]/div/div/div[2]/div[2]/div[2]/select"
     # xpath_qty = "//*[@id=\"Content\"]/div/div[2]/div/div[2]/div/div[2]/div/div/div[2]/div[2]/div[2]/div/input"
     # xpath_qty = "//*[@id=\"Content\"]/div/div[2]/div/div[2]/div/div[2]/div/div/div[2]/div[3]/div[2]/div/input"
-    
+
     xpath_variation_detail_prefix = "//*[@id=\"Content\"]/div/div[2]/div/div[2]/div/div[2]/div/div/div[2]/div["
 
     xpath_color_suffix_1 = "]/div[2]/variation-selector/div/div["
@@ -62,6 +92,7 @@ def p_product_fill(driver, customer_info):
     xpath_qty_suffix = "]/div[2]/div/input"
 
     div_index = 1 # Initialize index for dynamic divs
+    is_product_select_success = True
 
     # [START] Color
     color_selected = customer_info['prod_color']
@@ -72,7 +103,8 @@ def p_product_fill(driver, customer_info):
             driver.find_element(By.XPATH, xpath_color).click()
             div_index += 1
         except Exception as e:
-            print(f"Error selecting color: {e}")
+            is_product_select_success = False
+            LogUtils.log_warn(f"[商品頁] 選擇\"顏色\"時錯誤\n{e}")
     # [END] Color
 
     # [START] Size
@@ -84,7 +116,8 @@ def p_product_fill(driver, customer_info):
             prod_size_field.select_by_visible_text(size_selected)
             div_index += 1
         except Exception as e:
-            print(f"Error selecting size: {e}")
+            is_product_select_success = False
+            LogUtils.log_warn(f"[商品頁] 選擇\"尺寸\"時錯誤\n{e}")
     # [END] Size
 
     # [START] Qty
@@ -96,26 +129,69 @@ def p_product_fill(driver, customer_info):
             prod_qty_field.clear()
             prod_qty_field.send_keys(quantity)
         except Exception as e:
-            print(f"Error setting quantity: {e}")
-    # [END] Size
+            LogUtils.log_warn(f"[商品頁] 設定\"數量\"時錯誤\n{e}")
+    # [END] Qty
 
+    try:
+        xpath_buyNow = "//*[@id=\"#btn-variable-buy-now\"]"
+        driver.find_element(By.XPATH, xpath_buyNow).click()
+    except Exception as e:
+        is_product_select_success = False
+        LogUtils.log_warn(f"[商品頁] 點選購買時錯誤，請確認購買的商品庫存")
+    
+    return is_product_select_success
+
+def p_product_fill_new(driver, customer_info):
     xpath_buyNow = "//*[@id=\"#btn-variable-buy-now\"]"
     driver.find_element(By.XPATH, xpath_buyNow).click()
 
+# [END] 商品頁 ==================================================================
+
+# [START] 購物車 ================================================================
 
 def p_cart_fill(driver):
     """
-    Page: Cart
+    Page: 購物車 Cart.
 
-    Don't use explicit waiting.
+    Url: www.goopi.co/cart
+
+    Returns: True if 前往結帳 clicked successfully, False otherwise.
     """
-    time.sleep(3) # TODO: Fix this shit looks toooo fucking stupid
-    xpath_goCheckout = "//*[@id=\"checkout-container\"]/div/div[3]/div[4]/div[2]/section/div[2]/a"
-    go_checkout_button = WebDriverWait(driver, 30).until(
-        EC.presence_of_element_located((By.XPATH, xpath_goCheckout))
-    )
-    go_checkout_button.click()
+    xpath_goto_check = ".//a[contains(@href, \"/checkout\")]"
+    max_attempts = 3  # Maximum retry attempts
+    attempt = 0
 
+    while attempt < max_attempts:
+        try:
+            attempt += 1
+            LogUtils.log_info(f"[購物車] 第 {attempt} 次嘗試尋找 '前往結帳'")
+
+            go_checkout_button = WebDriverWait(driver, 3).until(
+                EC.presence_of_element_located((By.XPATH, xpath_goto_check))
+            )
+            go_checkout_button.click()
+            return True
+        except Exception as e:
+            LogUtils.log_warn(f"[購物車] Attempt {attempt} failed to locate '前往結帳' button. Error: {e}")
+            
+            if attempt < max_attempts:
+                LogUtils.log_info(f"[購物車] 找不到，重整頁面 ({attempt + 1})")
+                driver.refresh()
+            else:
+                LogUtils.log_warn(f"[購物車] 點選 \"前往結帳\"時錯誤\n{e}")
+                return False
+
+    return False
+
+def navigate_to_checkout_directly(driver):
+    """
+    若於購物車頁面點擊「前往結帳」時錯誤，直接切換至 /checkout
+    
+    TODO: 不知道會不會有問題?
+    """
+    driver.get(Constants.URL_GOOPI_CHECKOUT)
+
+# [END] 購物車 ==================================================================
 
 def p_checkout_fill_customer_info_form(driver, customer_info):
     """
@@ -285,9 +361,7 @@ def p_checkout_fill_payment_form(driver, customer_info):
     """
     Page: Checkout
 
-    填寫付款資料
-    
-    iframe 依序為卡號、持卡人姓名、有效期、安全碼
+    填寫付款資料, iframe 依序為卡號、持卡人姓名、有效期、安全碼
     """
 
     try:

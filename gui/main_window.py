@@ -1,7 +1,7 @@
 import tkinter as tk
 import tkinter.ttk as ttk
 from tkinter import messagebox, font, StringVar
-from bot.bot import launch_bot, open_browser
+from bot.bot import open_browser, launch_bot_from_product, launch_bot_from_cart
 from PIL import Image, ImageTk
 import json
 import threading
@@ -27,7 +27,7 @@ class Application(tk.Tk):
 
     def setupWindow(self):
         w = 400 # width for the Tk root
-        h = 400 # height for the Tk root
+        h = 420 # height for the Tk root
         # get screen width and height
         ws = self.winfo_screenwidth() # width of the screen
         hs = self.winfo_screenheight() # height of the screen
@@ -64,7 +64,8 @@ class Application(tk.Tk):
 
         tk.Label(frame1, text="商品網址", font=font_title).grid(row=1, column=0)
         self.entry_link = tk.Entry(frame1, font=font_entry, width=30)
-        self.entry_link.insert(tk.END, "https://www.goopi.co/products/%E2%80%9Crve-s3%E2%80%9D-riverside-track-shorts-pure-black")
+        self.entry_link.insert(tk.END, "https://www.goopi.co/products/burlap-outfitter-23ss-eq-wide-pants-2-colors")
+        # self.entry_link.insert(tk.END, "https://www.goopi.co/cart")
         self.entry_link.grid(row=1, column=1)
 
         tk.Label(frame1, text="顏色", font=font_title, justify="right").grid(row=2, column=0)
@@ -89,7 +90,7 @@ class Application(tk.Tk):
         frame1.button_clear_link = tk.Button(frame1, text="清除全部", command=self.clear_link_entry)
         frame1.button_clear_link.grid(row=9, column=0, padx=4)
 
-        self.add_notebook(frame1, "偏好設定")
+        self.add_notebook(frame1, "商品設定")
 
     def clear_link_entry(self):
         self.entry_link.delete(0, tk.END)
@@ -153,19 +154,42 @@ class Application(tk.Tk):
 
     def create_section_about(self):
         frame = tk.Frame()
+
+        font_area_start = font.Font(family="微軟正黑體", size=10, weight="bold")
+        font_title = font.Font(family="微軟正黑體", size=10)
+
+        tk.Label(frame, text="關於資料儲存", font=font_area_start).grid(row=0, column=0)
+        tk.Label(frame, text="本軟體儲存的資料有加鹽。", font=font_title).grid(row=1, column=0)
+
         banner = Image.open('res/goopi_bot.png') 
         bannerPhotoImage  = ImageTk.PhotoImage(banner)
 
         icon_label = tk.Label(frame, image=bannerPhotoImage)
-        icon_label.grid(row=0, column=0, columnspan=2)
+        icon_label.grid(row=6, column=0, columnspan=2)
         icon_label.image = bannerPhotoImage
         self.add_notebook(frame, "關於")
 
     def create_footer_actions(self):
-        self.start_button = tk.Button(self, text="開啟瀏覽器", width=12, command=self.btn_act_open_browser)
-        self.start_button.pack()
-        self.start_button = tk.Button(self, text="執行", width=12, command=self.btn_act_run)
-        self.start_button.pack()
+        footer_session = tk.Frame(self)
+        footer_session.pack()
+
+        self.start_button = tk.Button(footer_session, text="儲存目前資料", width=12, command=self.btn_act_save_data)
+        self.start_button.pack(side=tk.LEFT, padx=5)
+
+        self.run_button = tk.Button(footer_session, text="載入上次資料", width=12, command=self.btn_act_open_data)
+        self.run_button.pack(side=tk.LEFT, padx=5)
+
+        footer_frame = tk.Frame(self)
+        footer_frame.pack(pady=10)
+
+        self.start_button = tk.Button(footer_frame, text="開啟瀏覽器", width=12, command=self.btn_act_open_browser)
+        self.start_button.pack(side=tk.LEFT, padx=5)
+
+        self.run_button = tk.Button(footer_frame, text="從商品頁開始", width=12, command=self.btn_act_run_from_product)
+        self.run_button.pack(side=tk.LEFT, padx=5)
+
+        self.run_button = tk.Button(footer_frame, text="從購物車開始", width=12, command=self.btn_act_run_from_cart)
+        self.run_button.pack(side=tk.LEFT, padx=5)
     
     def create_bottom_status_bar(self):
         self.bottom_status_text =  tk.StringVar()
@@ -173,14 +197,15 @@ class Application(tk.Tk):
         statusbar = tk.Label(self, textvariable=self.bottom_status_text, relief=tk.SUNKEN, anchor='w')
         statusbar.pack(side=tk.BOTTOM, fill=tk.X)
 
-    def btn_act_open_browser(self):
+    # [START] Button actions ===================================================
+    
+    def verify_user_entry(self):
         product_link = self.entry_link.get()
-        if not product_link:
-            messagebox.showwarning("警告", "請填寫商品網址")
-            return
-        threading.Thread(target=open_browser, args=(product_link,)).start()
 
-    def btn_act_run(self):
+        if not product_link:
+                messagebox.showwarning("資料不完整", "商品連結未填寫，機器人不會通靈")
+                return
+        
         customer_info = {
             'prod_color': self.prod_color_clicked.get(),
             'prod_size': self.prod_size_clicked.get(),
@@ -195,19 +220,48 @@ class Application(tk.Tk):
             'cc_cvc': self.cc_cvc.get(),
             'cc_name': self.cc_name.get()
         }
-        product_link = self.entry_link.get()
 
-        if not all(customer_info.values()) or not product_link:
-                messagebox.showwarning("警告", "請填寫所有資料!")
+        if not all(customer_info.values()):
+                messagebox.showwarning("資料不完整", "自動填入資料不完整")
                 return
+        
+        return customer_info
 
-        try:
-            with open("customer_info.json", "w", encoding="utf-8") as f:
+    def btn_act_save_data(self):
+        customer_info = self.verify_user_entry()
+        product_link = self.entry_link.get()
+        with open("customer_info.json", "w", encoding="utf-8") as f:
                 json.dump({"product_link": product_link, "customer_info": customer_info}, f, indent=4, ensure_ascii=False)
 
-            # Launch bot in a separate thread
-            threading.Thread(target=launch_bot, args=(product_link, customer_info)).start()
-        except Exception as e:
-            messagebox.showerror("錯誤", f"儲存設定時發生錯誤。\n\n{e}")
+        messagebox.showwarning("TODO", "btn_act_save_data()")
+
+    def btn_act_open_data(self):
+        messagebox.showwarning("TODO", "btn_act_open_data()")
+
+    def btn_act_open_browser(self):
+        product_link = self.entry_link.get()
+        if not product_link:
+            messagebox.showwarning("警告", "請填寫商品網址")
             return
-    
+        threading.Thread(target=open_browser, args=(product_link,)).start()
+
+    def btn_act_run_from_product(self):
+        customer_info = self.verify_user_entry()
+        product_link = self.entry_link.get()
+
+        try:
+            # Launch bot in a separate thread
+            threading.Thread(target=launch_bot_from_product, args=(product_link, customer_info)).start()
+        except Exception as e:
+            messagebox.showerror("錯誤", f"btn_act_run_from_product()\n\n{e}")
+            return
+
+    def btn_act_run_from_cart(self):
+        customer_info = self.verify_user_entry()
+
+        try:
+            # Launch bot in a separate thread
+            threading.Thread(target=launch_bot_from_cart, args=(customer_info,)).start()
+        except Exception as e:
+            messagebox.showerror("錯誤", f"btn_act_run_from_cart()\n\n{e}")
+            return
