@@ -40,7 +40,7 @@ class Application(tk.Tk):
         # and where it is placed
         self.geometry('%dx%d+%d+%d' % (w, h, x, y))
 
-        # self.resizable(False, False)
+        self.resizable(False, False)
 
     def createMenu(self):
         menu = tk.Menu(self)
@@ -158,15 +158,15 @@ class Application(tk.Tk):
         font_area_start = font.Font(family="微軟正黑體", size=10, weight="bold")
         font_title = font.Font(family="微軟正黑體", size=10)
 
-        tk.Label(frame, text="關於資料儲存", font=font_area_start).grid(row=0, column=0)
-        tk.Label(frame, text="本軟體儲存的資料有加鹽。", font=font_title).grid(row=1, column=0)
+        tk.Label(frame, text="Whoever moves first is gay", font=font_area_start).grid(row=0, column=0)
+        tk.Label(frame, text="lol", font=font_title).grid(row=1, column=0)
 
-        banner = Image.open('res/goopi_bot.png') 
-        bannerPhotoImage  = ImageTk.PhotoImage(banner)
+        # banner = Image.open('res/goopi_bot.png') 
+        # bannerPhotoImage  = ImageTk.PhotoImage(banner)
 
-        icon_label = tk.Label(frame, image=bannerPhotoImage)
-        icon_label.grid(row=6, column=0, columnspan=2)
-        icon_label.image = bannerPhotoImage
+        # icon_label = tk.Label(frame, image=bannerPhotoImage)
+        # icon_label.grid(row=6, column=0, columnspan=2)
+        # icon_label.image = bannerPhotoImage
         self.add_notebook(frame, "關於")
 
     def create_footer_actions(self):
